@@ -1,8 +1,8 @@
 import csv
 
 # Fichiers de sortie
-fichier_stations_csv = 'stations.csv'
-fichier_liens_csv = 'liens.csv'
+fichier_stations_csv = 'stationsV2.csv'
+fichier_liens_csv = 'liensV2.csv'
 
 # Listes pour stocker les données nettoyées
 stations = []
@@ -25,8 +25,11 @@ with open(fichier_texte, 'r', encoding='utf-8') as fichier:
                 num_sommet = sommet_parties[0]  # Numéro du sommet
                 nom_sommet = " ".join(sommet_parties[1:]).replace(',', '')  # Nom du sommet
                 numero_ligne = partie[1].strip()  # Numéro de ligne
-                terminus = partie[2].strip()  # True/False pour terminus
-                branchement = partie[3].strip() if len(partie) > 3 else "0"  # Branchement (optionnel)
+
+                # Diviser la partie de terminus et branchement
+                terminus_branchement = partie[2].split()
+                terminus = terminus_branchement[0]  # True/False pour terminus
+                branchement = terminus_branchement[1] if len(terminus_branchement) > 1 else "0"  # Branchement (optionnel)
 
                 # Ajouter à la liste des stations
                 stations.append([num_sommet, nom_sommet, numero_ligne, terminus, branchement])

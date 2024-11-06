@@ -1,30 +1,121 @@
 import pandas as pd
-import networkx as nx
 import matplotlib.pyplot as plt
+import csv
 
-# Lire les données des stations et des connexions
-stations_df = pd.read_csv('stations.csv')
-connexions_df = pd.read_csv('liens.csv')
 
-# Initialisation du graphe
-G = nx.Graph()
 
-# Ajouter les stations comme noeuds
-for index, row in stations_df.iterrows():
-    G.add_node(row['id'], nom_station=row['nom_station'], ligne=row['ligne'],
-               terminus=row['terminus'], branchement=row['branchement'])
+def initGraph(filename):
+    """
+    :param filename: qui correspond au nom du fichier contentant les liens
+    :return: un dictionnaire qui a pour clé le numéro du sommet et en valeur une liste de tuple avec le sommet relié et le temps
+    """
+    graph={}
+    with open(filename, 'r') as f:
+        csvReader = csv.reader(f)
+        next(csvReader, None) # sauter l'en tête
+        for row in csvReader:
+            sommet1 = int(row[0])
+            sommet2 = int(row[1])
+            poids = float(row[2])
 
-# Ajouter les connexions comme arêtes avec le temps comme poids
-for index, row in connexions_df.iterrows():
-    G.add_edge(row['station1'], row['station2'], weight=row['temps_en_secondes'])
+            if sommet1 not in graph:
+                graph[sommet1] = []
+            graph[sommet1].append((sommet2, poids))
 
-# Afficher quelques informations sur le graphe
-print(f"Nombre de stations: {G.number_of_nodes()}")
-print(f"Nombre de connexions: {G.number_of_edges()}")
+            if sommet2 not in graph:
+                graph[sommet2] = []
+            graph[sommet2].append((sommet1, poids))
 
-# Visualiser le graphe
-plt.figure(figsize=(10, 10))
-pos = nx.spring_layout(G, seed=42)  # Layout pour la disposition des noeuds
-nx.draw(G, pos, with_labels=True, node_size=50, node_color='blue', font_size=8, edge_color='gray')
-plt.title("Graphique des stations de métro")
-plt.show()
+        return graph
+
+
+def checkConnexity(graph) -> bool:
+    """
+    :param graph: prend en paramètre un graphe
+    :return: booleen
+
+    Fonction qui implémente un parcours en largeur pour vérifier si le graphe est connexe
+
+    """
+    if not graph: return False
+
+    racine = next(iter(graph))
+    visite = set()
+    file = [racine]
+
+    while file :
+        current = file.pop(0)
+        if current not in visite:
+            visite.add(current)
+            for voisin,poids in graph[current]:
+                if voisin not in visite:
+                    file.append(voisin)
+
+    return len(graph) == len(visite)
+
+
+def bellmanFord(source,graph):
+
+    nbSommets = len(graph)
+    longChemins = {s:float('inf') for s in graph} # initialise la longueur des chemins depuis chacun des sommets a l'infini
+    predecesseurs = {s: None for s in graph} # initialise les predecesseurs
+    longChemins[source] = 0 # initialise le sommet source a 0
+    for i in range(nbSommets-1):
+        for sommet in graph:
+            for voisin,poids in graph[sommet]:
+                if longChemins[sommet]+poids < longChemins[voisin]:
+                    longChemins[voisin] = longChemins[sommet]+poids
+                    predecesseurs[voisin] = sommet
+
+    return longChemins,predecesseurs
+
+def plusCourtChemin(source,destination,predecesseurs):
+
+    if not predecesseurs : return None
+
+    chemin=[]
+    tmp = destination
+    while tmp :
+        if tmp == source :
+            break
+        chemin.append(tmp)
+        tmp = predecesseurs[tmp]
+
+    chemin.append(source)
+    chemin.reverse()
+
+    return chemin
+
+
+def prim(graph):
+    sommetsVisite = set()
+    candidats = []  # aretes candidates
+    cc = []  # sommets du acpm
+    coutTotal = 0
+    source = next(iter(graph)) # on attribue la source au premier element du graphe (pas important)
+
+    sommetsVisite.add(source)
+    for voisin,poids in graph[source] :
+        candidats.append((source,voisin,poids)) # on ajoute les voisins du sommet de départ aux candidats
+
+    while len(sommetsVisite) < len(graph) :
+        plusPetiteArete = None
+        for arrete in candidats:
+            if arrete[1] not in sommetsVisite:
+                if not plusPetiteArete or arrete[2] < plusPetiteArete[2] :
+                    plusPetiteArete = arrete
+
+        if not plusPetiteArete : break
+
+        sommetSource,voisin,poids = plusPetiteArete
+        sommetsVisite.add(voisin)
+        cc.append(plusPetiteArete)
+        coutTotal += poids
+
+        for prochainVoisin,poids in graph[voisin]:
+            if prochainVoisin not in sommetsVisite:
+                candidats.append((voisin,prochainVoisin,poids))
+
+
+    return cc,coutTotal
+

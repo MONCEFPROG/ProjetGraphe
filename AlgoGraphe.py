@@ -54,8 +54,7 @@ def checkConnexity(graph) -> bool:
     return len(graph) == len(visite)
 
 
-def bellmanFord(source,graph):
-
+def bellmanFord(source, graph):
     nbSommets = len(graph)
     longChemins = {s:float('inf') for s in graph} # initialise la longueur des chemins depuis chacun des sommets a l'infini
     predecesseurs = {s: None for s in graph} # initialise les predecesseurs
@@ -66,24 +65,16 @@ def bellmanFord(source,graph):
                 if longChemins[sommet]+poids < longChemins[voisin]:
                     longChemins[voisin] = longChemins[sommet]+poids
                     predecesseurs[voisin] = sommet
+    return longChemins, predecesseurs
 
-    return longChemins,predecesseurs
-
-def plusCourtChemin(source,destination,predecesseurs):
-
-    if not predecesseurs : return None
-
-    chemin=[]
+def plusCourtChemin(source, destination, predecesseurs):
+    if not predecesseurs: return None
+    chemin = []
     tmp = destination
-    while tmp :
-        if tmp == source :
-            break
+    while tmp is not None:
         chemin.append(tmp)
         tmp = predecesseurs[tmp]
-
-    chemin.append(source)
     chemin.reverse()
-
     return chemin
 
 
@@ -115,7 +106,6 @@ def prim(graph):
         for prochainVoisin,poids in graph[voisin]:
             if prochainVoisin not in sommetsVisite:
                 candidats.append((voisin,prochainVoisin,poids))
-
 
     return cc,coutTotal
 
